@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Platform</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.875rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        #result-card {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-APPROVED { background-color: #D1FAE5; color: #065F46; }
+        .status-REJECTED { background-color: #FEE2E2; color: #991B1B; }
+        .status-NEEDS_REVIEW { background-color: #FEF3C7; color: #92400E; }
+        .status-FAILED { background-color: #F3F4F6; color: #1F2937; }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+        }
+        
+        .detail-value {
+            font-weight: 500;
+        }
+        
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Loan Decision Engine</h1>
+    <p class="subtitle">Submit an application to be dynamically evaluated against configured business rules.</p>
+
+    <div class="card" id="form-card">
+        <form id="loanForm">
+            <div class="form-group">
+                <label for="creditScore">Credit Score</label>
+                <input type="number" id="creditScore" placeholder="e.g. 750" required min="300" max="850">
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Requested Amount ($)</label>
+                <input type="number" id="amount" placeholder="e.g. 25000" required min="1">
+            </div>
+
+            <button type="submit" id="submitBtn">
+                <span id="btnText">Evaluate Workflow</span>
+                <div class="spinner" id="btnSpinner"></div>
+            </button>
+        </form>
+    </div>
+
+    <div class="card" id="result-card">
+        <h3>Decision Result</h3>
+        <span class="status-badge" id="stateBadge">PENDING</span>
+        
+        <div class="detail-row">
+            <span class="detail-label">Request ID</span>
+            <span class="detail-value" id="resId" style="font-family: monospace; font-size: 0.85rem;">...</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <span class="detail-value" id="resStatus">...</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Message</span>
+            <span class="detail-value" id="resMessage">...</span>
+        </div>
+        
+        <div style="margin-top: 1.5rem; text-align: center;">
+             <button onclick="resetForm()" style="background-color: var(--bg); color: var(--text-main); border: 1px solid var(--border);">Submit Another</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('loanForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const resultCard = document.getElementById('result-card');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const score = parseInt(document.getElementById('creditScore').value);
+        const amount = parseInt(document.getElementById('amount').value);
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        btnText.style.display = 'none';
+        btnSpinner.style.display = 'block';
+        resultCard.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/v1/workflow/evaluate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Adding a random idempotency key for this simple demo
+                    'Idempotency-Key': 'web-' + Date.now() 
+                },
+                body: JSON.stringify({
+                    workflow_name: "loan_approval",
+                    payload: {
+                        credit_score: score,
+                        amount: amount
+                    }
+                })
+            });
+
+            const data = await response.json();
+            
+            // Populate Results
+            document.getElementById('stateBadge').textContent = data.current_stage;
+            document.getElementById('stateBadge').className = 'status-badge status-' + data.current_stage;
+            
+            document.getElementById('resId').textContent = data.request_id || 'N/A';
+            document.getElementById('resStatus').textContent = data.status || 'N/A';
+            document.getElementById('resMessage').textContent = data.message || 'N/A';
+
+            resultCard.style.display = 'block';
+
+        } catch (error) {
+            alert("Connection error: Make sure the FastAPI backend is running.");
+            console.error(error);
+        } finally {
+            // Restore button
+            submitBtn.disabled = false;
+            btnText.style.display = 'block';
+            btnSpinner.style.display = 'none';
+        }
+    });
+
+    function resetForm() {
+        form.reset();
+        resultCard.style.display = 'none';
+        document.getElementById('creditScore').focus();
+    }
+</script>
+</body>
+</html>

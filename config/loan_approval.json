@@ -1,0 +1,44 @@
+{
+  "name": "loan_approval",
+  "version": "1.0",
+  "stages": {
+    "PENDING": {
+      "rules": [
+        {
+          "condition": "AND",
+          "rules": [
+            {
+              "field": "credit_score",
+              "operator": ">=",
+              "value": 700
+            },
+            {
+              "field": "amount",
+              "operator": "<=",
+              "value": 50000
+            }
+          ]
+        }
+      ],
+      "on_success": "APPROVED",
+      "on_failure": "NEEDS_REVIEW"
+    },
+    "NEEDS_REVIEW": {
+        "rules": [
+            {
+               "field": "amount",
+               "operator": "<=",
+               "value": 10000 
+            }
+        ],
+        "on_success": "APPROVED",
+        "on_failure": "REJECTED"
+    },
+    "APPROVED": {
+      "is_terminal": true
+    },
+    "REJECTED": {
+      "is_terminal": true
+    }
+  }
+}
